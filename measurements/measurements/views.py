@@ -8,6 +8,14 @@ from django.conf import settings
 import requests
 import json
 
+def check_place(data):
+    r = requests.get(settings.PATH_VAR, headers={"Accept":"application/json"})
+    variables = r.json()
+    for variable in variables:
+        if data["place"] == variable["id"]:
+            return True
+    return False
+
 def check_variable(data):
     r = requests.get(settings.PATH_VAR, headers={"Accept":"application/json"})
     variables = r.json()
@@ -25,12 +33,13 @@ def MeasurementCreate(request):
     if request.method == 'POST':
         data = request.body.decode('utf-8')
         data_json = json.loads(data)
+        id_place = check_place(data_json)
         if check_variable(data_json) == True:
             measurement = Measurement()
             measurement.variable = data_json['variable']
             measurement.value = data_json['value']
             measurement.unit = data_json['unit']
-            measurement.place = data_json['place']
+            measurement.place = id_place
             measurement.save()
             return HttpResponse("successfully created measurement")
         else:
@@ -42,12 +51,13 @@ def MeasurementsCreate(request):
         data_json = json.loads(data)
         measurement_list = []
         for measurement in data_json:
+                    id_place = check_place(measurement)
                     if check_variable(measurement) == True:
                         db_measurement = Measurement()
                         db_measurement.variable = measurement['variable']
                         db_measurement.value = measurement['value']
                         db_measurement.unit = measurement['unit']
-                        db_measurement.place = measurement['place']
+                        db_measurement.place = id_place
                         measurement_list.append(db_measurement)
                     else:
                         return HttpResponse("unsuccessfully created measurement. Variable does not exist")
